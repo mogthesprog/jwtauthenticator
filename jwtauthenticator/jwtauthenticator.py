@@ -32,6 +32,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
         # If no audience is supplied then assume we're not verifying the audience field.
         if audience == "":
             opts = {"verify_aud": False}
+        else:
+            opts = {}
         with open(signing_certificate, 'r') as rsa_public_key_file:
             return jwt.decode(json_web_token, rsa_public_key_file.read(), audience=audience, options=opts)
 
@@ -71,13 +73,12 @@ class JSONWebTokenAuthenticator(Authenticator):
         of an email/userPrincipalName.
         """
     )
-    
+
     expected_audience = Unicode(
         default_value='',
         config=True,
         help="""HTTP header to inspect for the authenticated JSON Web Token."""
     )
-
 
     header_name = Unicode(
         default_value='Authorization',
@@ -116,6 +117,12 @@ class JSONWebTokenLocalAuthenticator(LocalAuthenticator):
         The field in the claims that contains the user name. It can be either a straight username,
         of an email/userPrincipalName.
         """
+    )
+
+    expected_audience = Unicode(
+        default_value='',
+        config=True,
+        help="""HTTP header to inspect for the authenticated JSON Web Token."""
     )
 
     header_name = Unicode(
