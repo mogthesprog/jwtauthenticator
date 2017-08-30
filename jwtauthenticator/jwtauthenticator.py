@@ -10,17 +10,21 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
     def get(self):
         header_name = self.authenticator.header_name
+        param_name = self.authenticator.param_name
+
         auth_header_content = self.request.headers.get(header_name, "")
         signing_certificate = self.authenticator.signing_certificate
         secret = self.authenticator.secret
         username_claim_field = self.authenticator.username_claim_field
         audience = self.authenticator.expected_audience
-        tokenParam = self.get_argument('token', default=False)
+        tokenParam = self.get_argument(param_name, default=False)
 
-        if tokenParam:
-           token = tokenParam
+        if auth_header_content and tokenParam:
+           raise web.HTTPError(400)
         elif auth_header_content:
            token = auth_header_content.split()[1]
+        elif tokenParam:
+           token = tokenParam
         else:
            raise web.HTTPError(401)
 
@@ -104,6 +108,11 @@ class JSONWebTokenAuthenticator(Authenticator):
         config=True,
         help="""HTTP header to inspect for the authenticated JSON Web Token.""")
 
+    param_name = Unicode(
+        config=True,
+        default_value='access_token',
+        help="""The name of the query parameter used to specify the JWT token""")
+
     secret = Unicode(
         config=True,
         help="""Shared secret key for siging JWT token.  If defined, it overrides any setting for signing_certificate""")
@@ -152,6 +161,11 @@ class JSONWebTokenLocalAuthenticator(LocalAuthenticator):
         default_value='Authorization',
         config=True,
         help="""HTTP header to inspect for the authenticated JSON Web Token.""")
+
+    param_name = Unicode(
+        config=True,
+        default_value='access_token',
+        help="""The name of the query parameter used to specify the JWT token""")
 
     secret = Unicode(
         config=True,
