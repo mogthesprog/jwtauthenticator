@@ -22,6 +22,9 @@ class JSONWebTokenLoginHandler(BaseHandler):
         if auth_header_content and tokenParam:
            raise web.HTTPError(400)
         elif auth_header_content:
+           # we should not see "token" as first word in the AUTHORIZATION header, if we do it could mean someone coming in with a stale API token
+           if auth_header_content.split()[0] != "bearer":
+              raise web.HTTPError(403)
            token = auth_header_content.split()[1]
         elif tokenParam:
            token = tokenParam
