@@ -35,14 +35,14 @@ You'll also need to set some configuration options including the location of the
 
 ```
 # one of "secret" or "signing_certificate" must be given.  If both, then "secret" will be the signing method used.
-c.LocalAuthenticator.secret = '<insert-256-bit-secret-key-here>'            # The secrect key used to generate the given token
+c.JSONWebTokenAuthenticator.secret = '<insert-256-bit-secret-key-here>'            # The secrect key used to generate the given token
 # -OR-
-c.LocalAuthenticator.signing_certificate = '/foo/bar/adfs-signature.crt'    # The certificate used to sign the incoming JSONWebToken, must be in PEM Format
+c.JSONWebTokenAuthenticator.signing_certificate = '/foo/bar/adfs-signature.crt'    # The certificate used to sign the incoming JSONWebToken, must be in PEM Format
 
-c.LocalAuthenticator.username_claim_field = 'upn'                           # The claim field contianing the username/sAMAccountNAme/userPrincipalName
-c.LocalAuthenticator.audience = 'https://myApp.domain.local/'               # This config option should match the aud field of the JSONWebToken, empty string to disable the validation of this field.
-#c.LocalAuthenticator.create_system_users = True                            # This will enable local user creation upon authentication, requires JSONWebTokenLocalAuthenticator
-#c.LocalAuthenticator.header_name = 'Authorization'                         # default value
+c.JSONWebTokenAuthenticator.username_claim_field = 'upn'                           # The claim field contianing the username/sAMAccountNAme/userPrincipalName
+c.JSONWebTokenAuthenticator.audience = 'https://myApp.domain.local/'               # This config option should match the aud field of the JSONWebToken, empty string to disable the validation of this field.
+#c.JSONWebLocalTokenAuthenticator.create_system_users = True                       # This will enable local user creation upon authentication, requires JSONWebTokenLocalAuthenticator
+#c.JSONWebTokenAuthenticator.header_name = 'Authorization'                         # default value
 ```
 
 You should be able to start jupyterhub. :)
