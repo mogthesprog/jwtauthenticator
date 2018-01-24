@@ -130,55 +130,8 @@ class JSONWebTokenAuthenticator(Authenticator):
         raise NotImplementedError()
 
 
-class JSONWebTokenLocalAuthenticator(LocalAuthenticator):
+class JSONWebTokenLocalAuthenticator(JSONWebTokenAuthenticator, LocalAuthenticator):
     """
-    Accept the authenticated user name from the REMOTE_USER HTTP header.
-    Derived from LocalAuthenticator for use of features such as adding
-    local accounts through the admin interface.
+    A version of JSONWebTokenAuthenticator that mixes in local system user creation
     """
-    signing_certificate = Unicode(
-        config=True,
-        help="""
-        The public certificate of the private key used to sign the incoming JSON Web Tokens.
-
-        Should be a path to an X509 PEM format certificate filesystem.
-        """
-    )
-
-    username_claim_field = Unicode(
-        default_value='upn',
-        config=True,
-        help="""
-        The field in the claims that contains the user name. It can be either a straight username,
-        of an email/userPrincipalName.
-        """
-    )
-
-    expected_audience = Unicode(
-        default_value='',
-        config=True,
-        help="""HTTP header to inspect for the authenticated JSON Web Token."""
-    )
-
-    header_name = Unicode(
-        default_value='Authorization',
-        config=True,
-        help="""HTTP header to inspect for the authenticated JSON Web Token.""")
-
-    param_name = Unicode(
-        config=True,
-        default_value='access_token',
-        help="""The name of the query parameter used to specify the JWT token""")
-
-    secret = Unicode(
-        config=True,
-        help="""Shared secret key for siging JWT token.  If defined, it overrides any setting for signing_certificate""")
-
-    def get_handlers(self, app):
-        return [
-            (r'/login', JSONWebTokenLoginHandler),
-        ]
-
-    @gen.coroutine
-    def authenticate(self, *args):
-        raise NotImplementedError()
+    pass
