@@ -7,10 +7,15 @@ Authenticate to Jupyterhub using a query parameter for the JSONWebToken, or by a
 This package can be installed with pip:
 
 ```
-cd jwtauthenticator pip install .
+pip install jupyterhub-jwtauthenticator
 ```
 
-Alternately, you can add this project folder to your PYTHONPATH.
+Alternately, you can clone this repository and run:
+
+```
+cd jwtauthenticator
+pip install -e .
+```
 
 ## Configuration
 
