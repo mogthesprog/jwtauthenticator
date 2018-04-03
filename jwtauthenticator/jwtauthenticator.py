@@ -63,7 +63,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
     @staticmethod
     def verify_jwt_using_secret(json_web_token, secret):
         # If no audience is supplied then assume we're not verifying the audience field.
-        return jwt.decode(json_web_token, secret, algorithms=['HS256'])
+        return jwt.decode(json_web_token, secret, algorithms=list(jwt.ALGORITHMS.SUPPORTED))
 
     @staticmethod
     def retrieve_username(claims, username_claim_field):
