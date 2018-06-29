@@ -13,6 +13,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         param_name = self.authenticator.param_name
 
         auth_header_content = self.request.headers.get(header_name, "")
+        auth_cookie_content = self.get_cookie("XSRF-TOKEN", "")
         signing_certificate = self.authenticator.signing_certificate
         secret = self.authenticator.secret
         username_claim_field = self.authenticator.username_claim_field
@@ -26,6 +27,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
            if auth_header_content.split()[0] != "bearer":
               raise web.HTTPError(403)
            token = auth_header_content.split()[1]
+        elif auth_cookie_content:
+           token = auth_cookie_content
         elif tokenParam:
            token = tokenParam
         else:
