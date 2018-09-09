@@ -35,6 +35,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
            raise web.HTTPError(401)
 
         claims = "";
+        print(secret)
         if secret:
             claims = self.verify_jwt_using_secret(token,secret)
         elif signing_certificate:
