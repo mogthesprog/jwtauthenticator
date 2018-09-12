@@ -23,10 +23,15 @@ class JSONWebTokenLoginHandler(BaseHandler):
         if auth_header_content and tokenParam:
            raise web.HTTPError(400)
         elif auth_header_content:
-           # we should not see "token" as first word in the AUTHORIZATION header, if we do it could mean someone coming in with a stale API token
-           if auth_header_content.split()[0] != "bearer":
+           # We should not see "token" as first word in the Authorization header.
+           # If we do, it could mean someone coming in with a stale API token.
+           header_words = auth_header_content.split()
+           # RFC 6750 section 2.1 states that the authentication scheme
+           # for bearer tokens must be "Bearer", capitalized. We will also accept
+           # legacy lowercase "bearer" scheme.
+           if (len(header_words) < 2) or (header_words[0] not in ["Bearer", "bearer"]):
               raise web.HTTPError(403)
-           token = auth_header_content.split()[1]
+           token = header_words[1]
         elif auth_cookie_content:
            token = auth_cookie_content
         elif tokenParam:
