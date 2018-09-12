@@ -41,11 +41,12 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         claims = "";
         if secret:
-            claims = self.verify_jwt_using_secret(token, secret, audience)
+            algorithms = list(jwt.ALGORITHMS.SUPPORTED)
+            claims = self.verify_jwt_using_secret(token, secret, audience, algorithms)
         elif signing_certificate:
-            claims = self.verify_jwt_with_claims(token, signing_certificate, audience)
+            claims = self.verify_jwt_using_certificate(token, signing_certificate, audience)
         else:
-           raise web.HTTPError(401)
+            raise web.HTTPError(401)
 
         username = self.retrieve_username(claims, username_claim_field)
         user = self.user_from_username(username)
@@ -59,23 +60,18 @@ class JSONWebTokenLoginHandler(BaseHandler):
         self.redirect(_url)
 
     @staticmethod
-    def verify_jwt_with_claims(token, signing_certificate, audience):
-        # If no audience is supplied then assume we're not verifying the audience field.
-        if audience == "":
-            opts = {"verify_aud": False}
-        else:
-            opts = {}
+    def verify_jwt_using_certificate(token, signing_certificate, audience):
         with open(signing_certificate, 'r') as rsa_public_key_file:
-            return jwt.decode(token, rsa_public_key_file.read(), audience=audience, options=opts)
+            return verify_jwt_using_secret(token, rsa_public_key_file.read(), audience, None)
 
     @staticmethod
-    def verify_jwt_using_secret(json_web_token, secret, audience):
+    def verify_jwt_using_secret(token, secret, audience, algorithms):
         # If no audience is supplied then assume we're not verifying the audience field.
         if audience == "":
             opts = {"verify_aud": False}
         else:
             opts = {}
-        return jwt.decode(json_web_token, secret, algorithms=list(jwt.ALGORITHMS.SUPPORTED), audience=audience, options=opts)
+        return jwt.decode(token, secret, algorithms=algorithms, audience=audience, options=opts)
 
     @staticmethod
     def retrieve_username(claims, username_claim_field):
