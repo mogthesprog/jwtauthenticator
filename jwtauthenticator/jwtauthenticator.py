@@ -18,29 +18,35 @@ class JSONWebTokenLoginHandler(BaseHandler):
         secret = self.authenticator.secret
         username_claim_field = self.authenticator.username_claim_field
         audience = self.authenticator.expected_audience
-        tokenParam = self.get_argument(param_name, default=False)
+        token_param = self.get_argument(param_name, default=False)
 
-        if auth_header_content and tokenParam:
+        if auth_header_content and token_param:
            raise web.HTTPError(400)
         elif auth_header_content:
-           # we should not see "token" as first word in the AUTHORIZATION header, if we do it could mean someone coming in with a stale API token
-           if auth_header_content.split()[0] != "bearer":
+           # We should not see "token" as first word in the Authorization header.
+           # If we do, it could mean someone coming in with a stale API token.
+           header_words = auth_header_content.split()
+           # RFC 6750 section 2.1 states that the authentication scheme
+           # for bearer tokens must be "Bearer", capitalized. We will also accept
+           # legacy lowercase "bearer" scheme.
+           if (len(header_words) < 2) or (header_words[0] not in ["Bearer", "bearer"]):
               raise web.HTTPError(403)
-           token = auth_header_content.split()[1]
+           token = header_words[1]
         elif auth_cookie_content:
            token = auth_cookie_content
-        elif tokenParam:
-           token = tokenParam
+        elif token_param:
+           token = token_param
         else:
            raise web.HTTPError(401)
 
         claims = "";
         if secret:
-            claims = self.verify_jwt_using_secret(token,secret)
+            algorithms = list(jwt.ALGORITHMS.SUPPORTED)
+            claims = self.verify_jwt_using_secret(token, secret, audience, algorithms)
         elif signing_certificate:
-            claims = self.verify_jwt_with_claims(token, signing_certificate, audience)
+            claims = self.verify_jwt_using_certificate(token, signing_certificate, audience)
         else:
-           raise web.HTTPError(401)
+            raise web.HTTPError(401)
 
         username = self.retrieve_username(claims, username_claim_field)
         user = self.user_from_username(username)
@@ -54,19 +60,18 @@ class JSONWebTokenLoginHandler(BaseHandler):
         self.redirect(_url)
 
     @staticmethod
-    def verify_jwt_with_claims(token, signing_certificate, audience):
+    def verify_jwt_using_certificate(token, signing_certificate, audience):
+        with open(signing_certificate, 'r') as rsa_public_key_file:
+            return verify_jwt_using_secret(token, rsa_public_key_file.read(), audience, None)
+
+    @staticmethod
+    def verify_jwt_using_secret(token, secret, audience, algorithms):
         # If no audience is supplied then assume we're not verifying the audience field.
         if audience == "":
             opts = {"verify_aud": False}
         else:
             opts = {}
-        with open(signing_certificate, 'r') as rsa_public_key_file:
-            return jwt.decode(token, rsa_public_key_file.read(), audience=audience, options=opts)
-
-    @staticmethod
-    def verify_jwt_using_secret(json_web_token, secret):
-        # If no audience is supplied then assume we're not verifying the audience field.
-        return jwt.decode(json_web_token, secret, algorithms=list(jwt.ALGORITHMS.SUPPORTED))
+        return jwt.decode(token, secret, algorithms=algorithms, audience=audience, options=opts)
 
     @staticmethod
     def retrieve_username(claims, username_claim_field):
@@ -106,7 +111,7 @@ class JSONWebTokenAuthenticator(Authenticator):
     expected_audience = Unicode(
         default_value='',
         config=True,
-        help="""HTTP header to inspect for the authenticated JSON Web Token."""
+        help="""If not an empty string, a string value that must be present in the JWT's `aud` claim."""
     )
 
     header_name = Unicode(
