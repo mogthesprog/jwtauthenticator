@@ -3,7 +3,7 @@ from jupyterhub.auth import Authenticator
 from jupyterhub.auth import LocalAuthenticator
 from jupyterhub.utils import url_path_join
 from tornado import gen, web
-from traitlets import Unicode
+from traitlets import Unicode, List
 from jose import jwt
 
 class JSONWebTokenLoginHandler(BaseHandler):
@@ -34,13 +34,21 @@ class JSONWebTokenLoginHandler(BaseHandler):
         else:
            raise web.HTTPError(401)
 
-        claims = "";
+        claims = {}
         if secret:
             claims = self.verify_jwt_using_secret(token,secret)
         elif signing_certificate:
             claims = self.verify_jwt_with_claims(token, signing_certificate, audience)
         else:
            raise web.HTTPError(401)
+
+        # check the claims
+        for claim in self.authenticator.boolean_claims:
+            if not claims.get(claim, False):
+                raise web.HTTPError(401, "%s claim validation failed", claim)
+        for claim in self.authenticator.boolean_negative_claims:
+            if claims.get(claim, True):
+                raise web.HTTPError(401, "%s claim validation failed", claim)
 
         username = self.retrieve_username(claims, username_claim_field)
         user = self.user_from_username(username)
@@ -122,6 +130,20 @@ class JSONWebTokenAuthenticator(Authenticator):
     secret = Unicode(
         config=True,
         help="""Shared secret key for siging JWT token.  If defined, it overrides any setting for signing_certificate""")
+
+    boolean_claims = List(
+        config=True,
+        help="""A list of JWT boolean claims that must be true to allow the authentication.
+
+        Use it to validate that a claim has the True value. For example, 'jupyterhub_access' is set to true."""
+    )
+
+    boolean_negative_claims = List(
+        config=True,
+        help="""A list of JWT boolean claims that must be false to allow the authentication.
+
+        Use it to validate that a claim as the False value. For example 'restricted' claim should be false."""
+    )
 
     def get_handlers(self, app):
         return [
