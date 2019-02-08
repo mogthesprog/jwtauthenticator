@@ -40,7 +40,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         claims = "";
         if secret:
-            claims = self.verify_jwt_using_secret(token,secret)
+            claims = self.verify_jwt_using_secret(token, secret, audience)
         elif signing_certificate:
             claims = self.verify_jwt_with_claims(token, signing_certificate, audience)
         else:
@@ -68,9 +68,14 @@ class JSONWebTokenLoginHandler(BaseHandler):
             return jwt.decode(token, rsa_public_key_file.read(), audience=audience, options=opts)
 
     @staticmethod
-    def verify_jwt_using_secret(json_web_token, secret):
+    def verify_jwt_using_secret(json_web_token, secret, audience):
         # If no audience is supplied then assume we're not verifying the audience field.
-        return jwt.decode(json_web_token, secret, algorithms=list(jwt.ALGORITHMS.SUPPORTED))
+        if audience == "":
+            opts = {"verify_aud": False}
+        else:
+            opts = {}
+        
+        return jwt.decode(json_web_token, secret, algorithms=list(jwt.ALGORITHMS.SUPPORTED), audience=audience, options=opts)
 
     @staticmethod
     def retrieve_username(claims, username_claim_field):
