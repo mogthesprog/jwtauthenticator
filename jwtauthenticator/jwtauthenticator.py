@@ -14,7 +14,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         header_is_authorization = self.authenticator.header_is_authorization
 
         auth_header_content = self.request.headers.get(header_name, "")
-        auth_cookie_content = self.get_cookie("XSRF-TOKEN", "")
+        auth_cookie_content = self.get_cookie(self.authenticator.cookie_name , "")
         signing_certificate = self.authenticator.signing_certificate
         secret = self.authenticator.secret
         username_claim_field = self.authenticator.username_claim_field
@@ -132,6 +132,11 @@ class JSONWebTokenAuthenticator(Authenticator):
         config=True,
         default_value='access_token',
         help="""The name of the query parameter used to specify the JWT token""")
+
+    cookie_name = Unicode(
+        config=True,
+        default_value='XSRF-TOKEN',
+        help="""The name of the cookie containing the JWT token""")
 
     secret = Unicode(
         config=True,
