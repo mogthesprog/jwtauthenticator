@@ -6,6 +6,8 @@ from tornado import gen, web
 from traitlets import Unicode, Bool
 from jose import jwt
 
+import base64
+
 class JSONWebTokenLoginHandler(BaseHandler):
 
     def get(self):
@@ -14,12 +16,14 @@ class JSONWebTokenLoginHandler(BaseHandler):
         header_is_authorization = self.authenticator.header_is_authorization
 
         auth_header_content = self.request.headers.get(header_name, "")
-        auth_cookie_content = self.get_cookie("XSRF-TOKEN", "")
+        auth_cookie_content = self.get_cookie(self.authenticator.cookie_name , "")
         signing_certificate = self.authenticator.signing_certificate
         secret = self.authenticator.secret
         username_claim_field = self.authenticator.username_claim_field
         audience = self.authenticator.expected_audience
         tokenParam = self.get_argument(param_name, default=False)
+        auth_login_redirect = self.authenticator.login_redirect
+        auth_post_login_redirect = self.authenticator.post_login_redirect
 
         if auth_header_content and tokenParam:
            raise web.HTTPError(400)
@@ -36,15 +40,24 @@ class JSONWebTokenLoginHandler(BaseHandler):
         elif tokenParam:
            token = tokenParam
         else:
-           raise web.HTTPError(401)
+    
+            #t = base64.b64encode(auth_post_login_redirect.encode('ascii'))
+            #print(t)
+
+            _login_url = auth_login_redirect + base64.b64encode(auth_post_login_redirect.encode('ascii')).decode("utf-8")
+            print("redirecting to osp logon page: " + _login_url)
+            self.redirect(_login_url)
+
+            # See if we've been given location where we can logon
+            #if auth_login_redirect and auth_post_login_redirect:
+            #raise web.HTTPError(401)
+
 
         claims = "";
         if secret:
             claims = self.verify_jwt_using_secret(token, secret, audience)
         elif signing_certificate:
             claims = self.verify_jwt_with_claims(token, signing_certificate, audience)
-        else:
-           raise web.HTTPError(401)
 
         username = self.retrieve_username(claims, username_claim_field)
         user = self.user_from_username(username)
@@ -53,7 +66,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         _url = url_path_join(self.hub.server.base_url, 'home')
         next_url = self.get_argument('next', default=False)
         if next_url:
-             _url = next_url
+            _url = next_url
 
         self.redirect(_url)
 
@@ -132,6 +145,21 @@ class JSONWebTokenAuthenticator(Authenticator):
         config=True,
         default_value='access_token',
         help="""The name of the query parameter used to specify the JWT token""")
+
+    cookie_name = Unicode(
+        config=True,
+        default_value='XSRF-TOKEN',
+        help="""The name of the cookie containing the JWT token""")
+
+    login_redirect = Unicode(
+        config=True,
+        default_value='',
+        help="""If user does not have a JWT, this is where they should go to get one""")
+
+    post_login_redirect = Unicode(
+        config=True,
+        default_value='',
+        help="""The logon url goes to this page after loggin you in""")
 
     secret = Unicode(
         config=True,
