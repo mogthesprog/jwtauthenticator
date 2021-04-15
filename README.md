@@ -46,7 +46,7 @@ c.JSONWebTokenAuthenticator.signing_certificate = '/foo/bar/adfs-signature.crt' 
 
 c.JSONWebTokenAuthenticator.username_claim_field = 'upn'                           # The claim field contianing the username/sAMAccountNAme/userPrincipalName
 c.JSONWebTokenAuthenticator.expected_audience = 'https://myApp.domain.local/'               # This config option should match the aud field of the JSONWebToken, empty string to disable the validation of this field.
-#c.JSONWebLocalTokenAuthenticator.create_system_users = True                       # This will enable local user creation upon authentication, requires JSONWebTokenLocalAuthenticator
+#c.JSONWebTokenLocalAuthenticator.create_system_users = True                       # This will enable local user creation upon authentication, requires JSONWebTokenLocalAuthenticator
 #c.JSONWebTokenAuthenticator.header_name = 'Authorization'                         # default value
 ```
 
